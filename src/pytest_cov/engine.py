@@ -181,6 +181,7 @@ class DistMaster(CovController):
 
     def start(self):
         """Ensure coverage rc file rsynced if appropriate."""
+        print 'master.start'
 
         if self.cov_config and os.path.exists(self.cov_config):
             self.config.option.rsyncdir.append(self.cov_config)
@@ -201,6 +202,7 @@ class DistMaster(CovController):
 
     def configure_node(self, node):
         """Slaves need to know if they are collocated and what files have moved."""
+        print 'master.configure', node
 
         node.slaveinput['cov_master_host'] = socket.gethostname()
         node.slaveinput['cov_master_topdir'] = self.topdir
@@ -208,6 +210,7 @@ class DistMaster(CovController):
 
     def testnodedown(self, node, error):
         """Collect data file name from slave."""
+        print 'master.testnodedown', node, error
 
         # If slave doesn't return any data then it is likely that this
         # plugin didn't get activated on the slave side.
@@ -218,6 +221,7 @@ class DistMaster(CovController):
         # If slave is not collocated then we must save the data file
         # that it returns to us.
         if 'cov_slave_data' in node.slaveoutput:
+            print 'master.testnodedown.notcollocated'
             data_suffix = '%s.%s.%06d.%s' % (
                 socket.gethostname(), os.getpid(),
                 random.randint(0, 999999),
@@ -244,6 +248,7 @@ class DistMaster(CovController):
 
     def finish(self):
         """Combines coverage data and sets the list of coverage objects to report on."""
+        print 'master.finish'
 
         # Combine all the suffix files into the data file.
         self.cov.stop()
@@ -259,6 +264,7 @@ class DistSlave(CovController):
 
     def start(self):
         """Determine what data file and suffix to contribute to and start coverage."""
+        print 'slave.start'
 
         # Determine whether we are collocated with master.
         self.is_collocated = (socket.gethostname() == self.config.slaveinput['cov_master_host'] and
@@ -266,6 +272,7 @@ class DistSlave(CovController):
 
         # If we are not collocated then rewrite master paths to slave paths.
         if not self.is_collocated:
+            print 'slave.start.nocollocated'
             master_topdir = self.config.slaveinput['cov_master_topdir']
             slave_topdir = self.topdir
             if self.cov_source is not None:
@@ -287,6 +294,7 @@ class DistSlave(CovController):
 
     def finish(self):
         """Stop coverage and send relevant info back to the master."""
+        print 'slave.finish'
         self.unset_env()
         self.cov.stop()
 
@@ -315,5 +323,6 @@ class DistSlave(CovController):
 
     def summary(self, stream):
         """Only the master reports so do nothing."""
+        print 'slave.summary'
 
         pass
